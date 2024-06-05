@@ -7,6 +7,6 @@ interface CashCardRepository extends CrudRepository<CashCardEntity,Long>, Paging
     
     CashCardEntity findByIdAndOwner(Long id, String owner);
     Page<CashCardEntity> findByOwner(String owner, PageRequest pageRequest);
-
+    boolean existsByIdAndOwner(Long id, String owner);
     
 } 
