@@ -28,7 +28,10 @@ public class CashCardController {
 	@GetMapping("/{requestedId}")
 	private ResponseEntity<CashCardEntity> findById(@PathVariable Long requestedId) {
 		Optional<CashCardEntity> cashCardOptional = cashCardRepository.findById(requestedId);
+		if (cashCardOptional.isEmpty()) {
 
+			System.out.println("it is empty");
+		}
 		if (cashCardOptional.isPresent()) {
 			return ResponseEntity.ok(cashCardOptional.get());
 		} else {
@@ -51,13 +54,10 @@ public class CashCardController {
 
 	@GetMapping
 	private ResponseEntity<List<CashCardEntity>> findAll(Pageable pageable) {
-		Page<CashCardEntity> page = cashCardRepository.findAll(
-				PageRequest.of(
-				        pageable.getPageNumber(),
-				        pageable.getPageSize(),
-				        pageable.getSortOr(Sort.by(Sort.Direction.ASC, "amount"))
-	    ));
-	    return ResponseEntity.ok(page.getContent());
+
+		Page<CashCardEntity> page = cashCardRepository.findAll(PageRequest.of(pageable.getPageNumber(),
+				pageable.getPageSize(), pageable.getSortOr(Sort.by(Sort.Direction.ASC, "amount"))));
+		return ResponseEntity.ok(page.getContent());
 	}
 
 }

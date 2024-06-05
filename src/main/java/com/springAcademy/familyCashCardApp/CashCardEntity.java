@@ -1,5 +1,6 @@
 package com.springAcademy.familyCashCardApp;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,6 +15,18 @@ public class CashCardEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	private Double amount;
+	@Column(name = "owner")
+	private String owner;
+	
+	
+
+	public String getOwner() {
+		return owner;
+	}
+
+	public void setOwner(String owner) {
+		this.owner = owner;
+	}
 
 	public Long getId() {
 		return id;
