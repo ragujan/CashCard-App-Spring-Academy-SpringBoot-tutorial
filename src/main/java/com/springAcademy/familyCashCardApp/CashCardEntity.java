@@ -24,6 +24,12 @@ public class CashCardEntity {
 		this.amount = amount;
 	}
 
+	public CashCardEntity(Long id, Double amount, String owner) {
+		this.id = id;
+		this.amount = amount;
+		this.owner = owner;
+	}
+
 	public CashCardEntity( Double amount, String owner) {
 		this.amount = amount;
 		this.owner = owner;

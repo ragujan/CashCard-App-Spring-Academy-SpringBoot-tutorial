@@ -8,8 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
+
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
@@ -38,19 +42,21 @@ public class CashCardApplicationTests {
 	@Test
 	// Should not return a cash card with an unknown id
 	void shouldNotReturnACashCardWithAnUnknownId() {
-		// ResponseEntity<CashCardEntity> response =
-		// restTemplate.withBasicAuth("sarah1", "abc123").getForEntity("/cashcards/100",
-		// CashCardEntity.class);
+
 		ResponseEntity<String> response = restTemplate.withBasicAuth("sarah1", "abc123") // Add this
 				.getForEntity("/cashcards/645", String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
+	// run this test in isolation
+	// otherwise comment it out, it adds data to the database, which means you have
+	// to change the
+	// assert values accordingly in other tests
 	// @Test
 	// // Should create a new CashCard
 	// @DirtiesContext
 	void shouldCreateANewCashCard() {
-		CashCardEntity cardEntity = new CashCardEntity(333.99,null);
+		CashCardEntity cardEntity = new CashCardEntity(333.99, null);
 		ResponseEntity<Void> createResponse = restTemplate.withBasicAuth("sarah1", "abc123").postForEntity("/cashcards",
 				cardEntity, Void.class);
 		assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -154,9 +160,56 @@ public class CashCardApplicationTests {
 	// Should not allow acces to cash cards they do not own
 	@Test
 	void shouldNotAllowAccessToCashCardsTheyDoNotOwn() {
-       ResponseEntity<String> resposne = restTemplate.withBasicAuth("sarah1", "abc123")
-	   .getForEntity("/cashcards/9", String.class);
+		ResponseEntity<String> resposne = restTemplate.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/cashcards/9", String.class);
 
-	   assertThat(resposne.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		assertThat(resposne.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
+	@DirtiesContext
+	void shouldUpdateAnExistingCashCard() {
+		CashCardEntity cashCardEntity = new CashCardEntity(19.99, null);
+
+		HttpEntity<CashCardEntity> request = new HttpEntity<>(cashCardEntity);
+
+		ResponseEntity<Void> response = restTemplate.withBasicAuth("sarah1", "abc123").exchange("/cashcards/7",
+				HttpMethod.PUT, request, Void.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+		ResponseEntity<String> getResponse = restTemplate.withBasicAuth("sarah1", "abc123")
+				.getForEntity("/cashcards/7", String.class);
+
+		assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext context = JsonPath.parse(getResponse.getBody());
+		Number id = context.read("$.id");
+		Double amount = context.read("$.amount");
+
+		assertThat(id).isEqualTo(7);
+		assertThat(amount).isEqualTo(19.99);
+
+	}
+
+	@Test
+	void shouldNotUpdateACashCardThatDoesNotExist() {
+		CashCardEntity unknownCard = new CashCardEntity(null, 19.99, null);
+		HttpEntity<CashCardEntity> request = new HttpEntity<>(unknownCard);
+		ResponseEntity<Void> response = restTemplate
+				.withBasicAuth("sarah1", "abc123")
+				.exchange("/cashcards/99999", HttpMethod.PUT, request, Void.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
+	void shouldNotUpdateACashCardThatIsOwnedBySomeoneElse() {
+		CashCardEntity kumarsCard = new CashCardEntity(null, 333.33, null);
+
+		HttpEntity<CashCardEntity> request = new HttpEntity<>(kumarsCard);
+
+		ResponseEntity<Void> response = restTemplate.withBasicAuth("sarah1", "abc123")
+				.exchange("/cashcards/9", HttpMethod.PUT, request, Void.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 }
