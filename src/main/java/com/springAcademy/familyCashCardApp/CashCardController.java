@@ -1,6 +1,7 @@
 package com.springAcademy.familyCashCardApp;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -26,8 +27,9 @@ public class CashCardController {
 	}
 
 	@GetMapping("/{requestedId}")
-	private ResponseEntity<CashCardEntity> findById(@PathVariable Long requestedId) {
-		Optional<CashCardEntity> cashCardOptional = cashCardRepository.findById(requestedId);
+	private ResponseEntity<CashCardEntity> findById(@PathVariable Long requestedId, Principal principal) {
+		Optional<CashCardEntity> cashCardOptional = Optional
+				.ofNullable(cashCardRepository.findByIdAndOwner(requestedId, principal.getName()));
 		if (cashCardOptional.isEmpty()) {
 
 			System.out.println("it is empty");
@@ -46,17 +48,18 @@ public class CashCardController {
 
 	@PostMapping
 	private ResponseEntity<Void> createCashCard(@RequestBody CashCardEntity newCashCardRequest,
-			UriComponentsBuilder ucb) {
-		CashCardEntity savedCard = cashCardRepository.save(newCashCardRequest);
+			UriComponentsBuilder ucb,Principal principal) {
+		CashCardEntity savedCard = cashCardRepository.save(new CashCardEntity(newCashCardRequest.getAmount(),principal.getName()));
 		URI locationOfNewCashCard = ucb.path("cashcards/{id}").buildAndExpand(savedCard.getId()).toUri();
 		return ResponseEntity.created(locationOfNewCashCard).build();
 	}
 
 	@GetMapping
-	private ResponseEntity<List<CashCardEntity>> findAll(Pageable pageable) {
+	private ResponseEntity<List<CashCardEntity>> findAll(Pageable pageable, Principal prn) {
 
-		Page<CashCardEntity> page = cashCardRepository.findAll(PageRequest.of(pageable.getPageNumber(),
-				pageable.getPageSize(), pageable.getSortOr(Sort.by(Sort.Direction.ASC, "amount"))));
+		Page<CashCardEntity> page = cashCardRepository.findByOwner(prn.getName(), PageRequest.of(pageable.getPageNumber(),
+						pageable.getPageSize(),
+						pageable.getSortOr(Sort.by(Sort.Direction.ASC, "amount"))));
 		return ResponseEntity.ok(page.getContent());
 	}
 

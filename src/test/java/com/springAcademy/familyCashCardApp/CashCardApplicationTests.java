@@ -10,20 +10,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
-
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-//@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
+// @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 public class CashCardApplicationTests {
 
 	@Autowired
 	TestRestTemplate restTemplate;
 
-//	Should return a cash card when data is saved
+	// Should return a cash card when data is saved
 	@Test
 	void shouldReturnACashCardWhenDataIsSaved() {
 		ResponseEntity<String> response = restTemplate.withBasicAuth("sarah1", "abc123") // Add this
@@ -39,19 +36,21 @@ public class CashCardApplicationTests {
 	}
 
 	@Test
-//	Should not return a cash card with an unknown id
+	// Should not return a cash card with an unknown id
 	void shouldNotReturnACashCardWithAnUnknownId() {
-//		ResponseEntity<CashCardEntity> response = restTemplate.withBasicAuth("sarah1", "abc123").getForEntity("/cashcards/100", CashCardEntity.class);
+		// ResponseEntity<CashCardEntity> response =
+		// restTemplate.withBasicAuth("sarah1", "abc123").getForEntity("/cashcards/100",
+		// CashCardEntity.class);
 		ResponseEntity<String> response = restTemplate.withBasicAuth("sarah1", "abc123") // Add this
 				.getForEntity("/cashcards/645", String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	// @Test
-//	Should create a new CashCard
+	// // Should create a new CashCard
 	// @DirtiesContext
 	void shouldCreateANewCashCard() {
-		CashCardEntity cardEntity = new CashCardEntity(333.99);
+		CashCardEntity cardEntity = new CashCardEntity(333.99,null);
 		ResponseEntity<Void> createResponse = restTemplate.withBasicAuth("sarah1", "abc123").postForEntity("/cashcards",
 				cardEntity, Void.class);
 		assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -82,7 +81,7 @@ public class CashCardApplicationTests {
 
 		int cashCardCount = documentContext.read("$.length()");
 
-//		assertThat(cashCardCount).isEqualTo(4);
+		// assertThat(cashCardCount).isEqualTo(4);
 
 	}
 
@@ -113,7 +112,8 @@ public class CashCardApplicationTests {
 	}
 
 	@Test
-//	Should return a sorted page of cash cards with no parameters and use default values
+	// Should return a sorted page of cash cards with no parameters and use default
+	// values
 	void shouldReturnASortedPageOfCashCardsWithNoParametersAndUseDefaultValues() {
 		ResponseEntity<String> response = restTemplate.withBasicAuth("sarah1", "abc123").getForEntity("/cashcards",
 				String.class);
@@ -129,4 +129,34 @@ public class CashCardApplicationTests {
 
 	}
 
+	// Should not return a cash card when using bad credentials
+	@Test
+	void shouldNotReturnACashCardWhenusingBadCredentials() {
+		ResponseEntity<String> response = restTemplate.withBasicAuth("bad-user", "111")
+				.getForEntity("/cashcards/1", String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+		response = restTemplate
+				.withBasicAuth("sarah1", "BAD-PASSWORD")
+				.getForEntity("/cashcards/99", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	// Should reject users who are not card owners
+	@Test
+	void shouldRejectUsersWhoAreNotCardOwners() {
+		ResponseEntity<String> response = restTemplate.withBasicAuth("hank-owns-no-cards", "qrs456")
+				.getForEntity("/cashcards/1", String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+	}
+
+	// Should not allow acces to cash cards they do not own
+	@Test
+	void shouldNotAllowAccessToCashCardsTheyDoNotOwn() {
+       ResponseEntity<String> resposne = restTemplate.withBasicAuth("sarah1", "abc123")
+	   .getForEntity("/cashcards/9", String.class);
+
+	   assertThat(resposne.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
 }

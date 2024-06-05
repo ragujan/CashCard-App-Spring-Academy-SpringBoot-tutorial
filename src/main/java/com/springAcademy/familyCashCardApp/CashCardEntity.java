@@ -18,7 +18,16 @@ public class CashCardEntity {
 	@Column(name = "owner")
 	private String owner;
 	
-	
+	public CashCardEntity(Long id, Double amount) {
+		super();
+		this.id = id;
+		this.amount = amount;
+	}
+
+	public CashCardEntity( Double amount, String owner) {
+		this.amount = amount;
+		this.owner = owner;
+	}
 
 	public String getOwner() {
 		return owner;
@@ -28,6 +37,7 @@ public class CashCardEntity {
 		this.owner = owner;
 	}
 
+
 	public Long getId() {
 		return id;
 	}
@@ -36,11 +46,7 @@ public class CashCardEntity {
 		this.id = id;
 	}
 
-	public CashCardEntity(Long id, Double amount) {
-		super();
-		this.id = id;
-		this.amount = amount;
-	}
+	
 	public CashCardEntity( Double amount) {
 		super();
 		this.amount = amount;
